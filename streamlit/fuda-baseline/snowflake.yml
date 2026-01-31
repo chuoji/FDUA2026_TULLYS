@@ -1,0 +1,21 @@
+definition_version: '2'
+entities:
+  fdua_baseline:
+    type: streamlit
+    identifier:
+      name: fdua_baseline
+    main_file: streamlit_app.py
+    pages_dir: pages
+    query_warehouse: <% ctx.env.SNOWFLAKE_WAREHOUSE %>
+    stage: streamlit
+    artifacts:
+      - streamlit_app.py
+      - environment.yml
+      - pages
+      - common/snowflake_util.py
+      - common/data_loader.py
+      - common/llm_generator.py
+      - common/docx_writer.py
+      - common/validator.py
+      - config/prompts.py
+
