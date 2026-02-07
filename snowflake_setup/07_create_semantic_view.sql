@@ -471,6 +471,62 @@ CREATE OR REPLACE SEMANTIC VIEW SECURITIES_REPORTS_SEMANTIC
   );
 
 -- ================================================================
+-- Semantic View 5: 有価証券報告書（FULL_TEXT含む）
+-- ================================================================
+CREATE OR REPLACE SEMANTIC VIEW SECURITIES_REPORTS_SEMANTIC
+  TABLES (
+    sr AS SECURITIES_REPORTS_TEXT
+      WITH SYNONYMS ('有価証券報告書', 'securities reports', '報告書', 'レポート')
+      COMMENT = '有価証券報告書のPDF全文とメタデータ'
+  )
+  FACTS (
+    sr.full_text AS sr.FULL_TEXT
+      WITH SYNONYMS ('全文', 'PDF全文', '本文', 'full text')
+      COMMENT = '有価証券報告書のPDF全文（重要: Cortex Analyst検索対象）',
+
+    sr.page_count AS sr.PAGE_COUNT
+      WITH SYNONYMS ('ページ数', 'page count')
+      COMMENT = '有価証券報告書のページ数',
+
+    sr.character_count AS sr.CHARACTER_COUNT
+      WITH SYNONYMS ('文字数', 'character count')
+      COMMENT = '有価証券報告書の文字数（トークン数推定に使用: 1トークン ≈ 4文字）',
+
+    sr.word_count AS sr.WORD_COUNT
+      WITH SYNONYMS ('単語数', 'word count')
+      COMMENT = '有価証券報告書の単語数'
+  )
+  DIMENSIONS (
+    PUBLIC sr.company_code AS sr.COMPANY_CODE
+      WITH SYNONYMS ('企業コード', '会社コード', 'コード', 'code')
+      COMMENT = '企業を識別する一意のコード',
+
+    PUBLIC sr.document_title AS sr.DOCUMENT_TITLE
+      WITH SYNONYMS ('文書タイトル', 'タイトル', 'document title')
+      COMMENT = '有価証券報告書のタイトル',
+
+    PUBLIC sr.submission_date AS sr.SUBMISSION_DATE
+      WITH SYNONYMS ('提出日', 'submission date')
+      COMMENT = '有価証券報告書の提出日',
+
+    PUBLIC sr.fiscal_period AS sr.FISCAL_PERIOD
+      WITH SYNONYMS ('決算期', '会計期間', 'fiscal period')
+      COMMENT = '決算期（例: 2025年3月期）',
+
+    PUBLIC sr.fiscal_year AS sr.FISCAL_YEAR
+      WITH SYNONYMS ('決算年度', '会計年度', '年度', 'fiscal year')
+      COMMENT = '決算年度',
+
+    PUBLIC sr.pdf_file_name AS sr.PDF_FILE_NAME
+      WITH SYNONYMS ('PDFファイル名', 'ファイル名', 'PDF file name')
+      COMMENT = 'PDFファイル名',
+
+    PUBLIC sr.extraction_timestamp AS sr.EXTRACTION_TIMESTAMP
+      WITH SYNONYMS ('抽出日時', '取得日時', 'extraction timestamp')
+      COMMENT = 'PDF全文の抽出日時'
+  );
+  
+-- ================================================================
 -- 確認
 -- ================================================================
 -- ビューの作成を確認
