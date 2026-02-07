@@ -471,60 +471,73 @@ CREATE OR REPLACE SEMANTIC VIEW SECURITIES_REPORTS_SEMANTIC
   );
 
 -- ================================================================
--- Semantic View 5: 有価証券報告書（FULL_TEXT含む）
--- ================================================================
-CREATE OR REPLACE SEMANTIC VIEW SECURITIES_REPORTS_SEMANTIC
+-- Semantic View 5: 有価証券報告書（チャンク単位）
+CREATE OR REPLACE SEMANTIC VIEW SECURITIES_REPORTS_SEMANTIC_CHUNKS
   TABLES (
-    sr AS SECURITIES_REPORTS_TEXT
-      WITH SYNONYMS ('有価証券報告書', 'securities reports', '報告書', 'レポート')
-      COMMENT = '有価証券報告書のPDF全文とメタデータ'
+    sc AS SECURITIES_REPORTS_CHUNKS_ARRANGE
+      WITH SYNONYMS ('有価証券報告書', 'securities reports', '報告書', 'レポート', 'チャンク', 'chunks')
+      COMMENT = '有価証券報告書を章(L1)/項目(L2)単位で分割したチャンク本文とメタデータ'
   )
   FACTS (
-    sr.full_text AS sr.FULL_TEXT
-      WITH SYNONYMS ('全文', 'PDF全文', '本文', 'full text')
-      COMMENT = '有価証券報告書のPDF全文（重要: Cortex Analyst検索対象）',
+    /* ★検索の主対象：L1+L2+本文を結合した列（あなたが作った列） */
+    sc.chunk_text_arrange AS sc.CHUNK_TEXT_ARRANGE
+      WITH SYNONYMS ('本文', 'チャンク本文', 'セクション本文', '結合本文', 'full text', 'chunk text')
+      COMMENT = 'L1/L2見出しとチャンク本文を結合したテキスト（重要: Cortex Analyst検索対象）',
 
-    sr.page_count AS sr.PAGE_COUNT
+    sc.char_count AS sc.CHAR_COUNT
+      WITH SYNONYMS ('文字数', 'char count', 'character count')
+      COMMENT = 'チャンク文字数（トークン数推定: 1トークン ≈ 4文字）',
+
+    sc.page_count AS sc.PAGE_COUNT
       WITH SYNONYMS ('ページ数', 'page count')
-      COMMENT = '有価証券報告書のページ数',
-
-    sr.character_count AS sr.CHARACTER_COUNT
-      WITH SYNONYMS ('文字数', 'character count')
-      COMMENT = '有価証券報告書の文字数（トークン数推定に使用: 1トークン ≈ 4文字）',
-
-    sr.word_count AS sr.WORD_COUNT
-      WITH SYNONYMS ('単語数', 'word count')
-      COMMENT = '有価証券報告書の単語数'
+      COMMENT = '元PDFのページ数'
   )
   DIMENSIONS (
-    PUBLIC sr.company_code AS sr.COMPANY_CODE
+    PUBLIC sc.company_code AS sc.COMPANY_CODE
       WITH SYNONYMS ('企業コード', '会社コード', 'コード', 'code')
-      COMMENT = '企業を識別する一意のコード',
+      COMMENT = '企業を識別するコード',
 
-    PUBLIC sr.document_title AS sr.DOCUMENT_TITLE
+    PUBLIC sc.chunk_id AS sc.CHUNK_ID
+      WITH SYNONYMS ('チャンクID', 'chunk id', '連番')
+      COMMENT = '企業内のチャンク連番(1..)',
+
+    PUBLIC sc.start_pos AS sc.START_POS
+      WITH SYNONYMS ('開始位置', 'start', 'start position')
+      COMMENT = '全文中の開始位置（参考）',
+
+    PUBLIC sc.end_pos AS sc.END_POS
+      WITH SYNONYMS ('終了位置', 'end', 'end position')
+      COMMENT = '全文中の終了位置（参考）',
+
+    PUBLIC sc.document_title AS sc.DOCUMENT_TITLE
       WITH SYNONYMS ('文書タイトル', 'タイトル', 'document title')
       COMMENT = '有価証券報告書のタイトル',
 
-    PUBLIC sr.submission_date AS sr.SUBMISSION_DATE
+    PUBLIC sc.submission_date AS sc.SUBMISSION_DATE
       WITH SYNONYMS ('提出日', 'submission date')
       COMMENT = '有価証券報告書の提出日',
 
-    PUBLIC sr.fiscal_period AS sr.FISCAL_PERIOD
+    PUBLIC sc.fiscal_period AS sc.FISCAL_PERIOD
       WITH SYNONYMS ('決算期', '会計期間', 'fiscal period')
       COMMENT = '決算期（例: 2025年3月期）',
 
-    PUBLIC sr.fiscal_year AS sr.FISCAL_YEAR
+    PUBLIC sc.fiscal_year AS sc.FISCAL_YEAR
       WITH SYNONYMS ('決算年度', '会計年度', '年度', 'fiscal year')
-      COMMENT = '決算年度',
+      COMMENT = '決算年度（YYYY）',
 
-    PUBLIC sr.pdf_file_name AS sr.PDF_FILE_NAME
+    PUBLIC sc.pdf_file_name AS sc.PDF_FILE_NAME
       WITH SYNONYMS ('PDFファイル名', 'ファイル名', 'PDF file name')
-      COMMENT = 'PDFファイル名',
+      COMMENT = '元PDFファイル名',
 
-    PUBLIC sr.extraction_timestamp AS sr.EXTRACTION_TIMESTAMP
+    PUBLIC sc.stage_path AS sc.STAGE_PATH
+      WITH SYNONYMS ('ステージパス', 'stage path')
+      COMMENT = 'Stageパス（@SECURITIES_REPORTS/...）',
+
+    PUBLIC sc.extraction_timestamp AS sc.EXTRACTION_TIMESTAMP
       WITH SYNONYMS ('抽出日時', '取得日時', 'extraction timestamp')
-      COMMENT = 'PDF全文の抽出日時'
+      COMMENT = '抽出日時'
   );
+
   
 -- ================================================================
 -- 確認
