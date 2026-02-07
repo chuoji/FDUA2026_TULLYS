@@ -279,6 +279,35 @@ CREATE OR REPLACE TABLE SECURITIES_REPORTS_TEXT (
 ALTER TABLE SECURITIES_REPORTS_TEXT CLUSTER BY (COMPANY_CODE);
 
 -- ================================================================
+-- 6. 有価証券報告書テキストテーブル（LAYOUT + Chunking対応）
+-- ================================================================
+CREATE OR REPLACE TABLE SECURITIES_REPORTS_CHUNKS (
+  COMPANY_CODE NUMBER(38,0) NOT NULL COMMENT '企業コード',
+  CHUNK_ID     NUMBER(38,0) NOT NULL COMMENT '企業内のチャンク連番(1..)',
+  L1_TITLE     VARCHAR(200) NOT NULL COMMENT '章(L1) 見出し',
+  L2_TITLE     VARCHAR(500) COMMENT '項目(L2) 見出し（無い場合NULL）',
+  CHUNK_TEXT   VARCHAR(16777216) NOT NULL COMMENT 'チャンク本文',
+  CHAR_COUNT   NUMBER(38,0) COMMENT 'チャンク文字数',
+  START_POS    NUMBER(38,0) COMMENT '全文中の開始位置',
+  END_POS      NUMBER(38,0) COMMENT '全文中の終了位置',
+  DOCUMENT_TITLE  VARCHAR(500) COMMENT '文書タイトル',
+  SUBMISSION_DATE DATE COMMENT '提出日',
+  FISCAL_PERIOD   VARCHAR(100) COMMENT '決算期（例: 2025年3月期）',
+  FISCAL_YEAR     NUMBER(38,0) COMMENT '決算年度（YYYY）',
+  PAGE_COUNT      NUMBER(38,0) COMMENT 'ページ数',
+  PDF_FILE_NAME   VARCHAR(200) COMMENT '元PDFファイル名',
+  STAGE_PATH      VARCHAR(500) COMMENT 'Stageパス（@SECURITIES_REPORTS/...）',
+  EXTRACTION_METHOD VARCHAR(100) DEFAULT 'AI_PARSE_DOCUMENT_LAYOUT' COMMENT '抽出方法',
+  EXTRACTION_TIMESTAMP TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP() COMMENT '抽出日時',
+
+  PRIMARY KEY (COMPANY_CODE, CHUNK_ID)
+);
+
+ALTER TABLE SECURITIES_REPORTS_CHUNKS CLUSTER BY (COMPANY_CODE);
+
+
+
+-- ================================================================
 -- テーブル確認
 -- ================================================================
 SHOW TABLES;
