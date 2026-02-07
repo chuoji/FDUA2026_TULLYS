@@ -62,7 +62,7 @@ def export_to_word(session: Session, company_code: int, proposal_text: str, phas
     timestamp = now.strftime("%Y%m%d_%H%M")
 
     # ファイル名生成
-    filename = f"{company_code}_{phase}_{timestamp}.docx"
+    filename = f"{company_code}.docx"
     stage_path = f"@GENERATED_PROPOSALS/{filename}"
 
     # Wordドキュメント作成（Streamlit実装と同じ構造）
