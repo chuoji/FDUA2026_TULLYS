@@ -537,8 +537,569 @@ CREATE OR REPLACE SEMANTIC VIEW SECURITIES_REPORTS_SEMANTIC_CHUNKS
       WITH SYNONYMS ('抽出日時', '取得日時', 'extraction timestamp')
       COMMENT = '抽出日時'
   );
-
   
+-- ================================================================
+-- Semantic View 6: 居住基本情報
+-- ================================================================
+CREATE OR REPLACE SEMANTIC VIEW PREF_RES_BASIC_PROPOSAL_SEMANTIC
+  TABLES (
+    pr AS FDUA_COMPETITION.PUBLIC.PREFECTURE_RESIDENTIAL_BASIC_INFO
+      WITH SYNONYMS (
+        '都道府県 居住 基本情報 統合',
+        '住宅ストック',
+        '建築インフラ提案',
+        'regional housing and infrastructure',
+        'proposal evidence'
+      )
+      COMMENT = '建築・インフラ企業の地域提案書作成の根拠として使う統合セマンティックビュー（住宅ストック/着工/居住水準/生活インフラ/都市機能）'
+  )
+
+  FACTS (
+    -- =========================================================
+    -- 1) 住宅ストック（更新・空き家・住宅類型）
+    -- =========================================================
+    pr."総住宅数" AS "総住宅数"
+      WITH SYNONYMS ('住宅ストック', 'total dwellings', 'housing stock')
+      COMMENT = '総住宅数',
+
+    pr."空き家数" AS "空き家数"
+      WITH SYNONYMS ('空き家', 'vacant houses', 'vacancy', 'ストック課題', 'リノベ需要')
+      COMMENT = '空き家数',
+
+    pr."持ち家数" AS "持ち家数"
+      WITH SYNONYMS ('持ち家', 'owner-occupied', 'owned housing')
+      COMMENT = '持ち家数',
+
+    pr."借家数" AS "借家数"
+      WITH SYNONYMS ('借家', 'rental housing', 'rented')
+      COMMENT = '借家数',
+
+    pr."民営借家数" AS "民営借家数"
+      WITH SYNONYMS ('民営借家', 'private rental', '民間賃貸')
+      COMMENT = '民営借家数',
+
+    pr."公営の借家数" AS "公営の借家数"
+      WITH SYNONYMS ('公営住宅', 'public rental', 'municipal housing')
+      COMMENT = '公営の借家数',
+
+    pr."給与住宅数" AS "給与住宅数"
+      WITH SYNONYMS ('給与住宅', 'company housing', 'employer housing')
+      COMMENT = '給与住宅数',
+
+    pr."一戸建住宅数" AS "一戸建住宅数"
+      WITH SYNONYMS ('一戸建', 'detached houses', '戸建て')
+      COMMENT = '一戸建住宅数',
+
+    pr."共同住宅数" AS "共同住宅数"
+      WITH SYNONYMS ('共同住宅', '集合住宅', 'apartments', 'multi-family')
+      COMMENT = '共同住宅数',
+
+    pr."エレベーター付き共同住宅数（非木造）" AS "エレベーター付き共同住宅数（非木造）"
+      WITH SYNONYMS ('エレベーター', 'EV', 'elevator', 'バリアフリー')
+      COMMENT = 'エレベーター付き共同住宅数（非木造）',
+
+    pr."高齢者対応型共同住宅数" AS "高齢者対応型共同住宅数"
+      WITH SYNONYMS ('高齢者対応', 'elderly-friendly', 'バリアフリー住宅')
+      COMMENT = '高齢者対応型共同住宅数',
+
+    pr."高齢者対応型共同住宅数のうちサービス付き高齢者住宅数" AS "高齢者対応型共同住宅数のうちサービス付き高齢者住宅数"
+      WITH SYNONYMS ('サ高住', 'サービス付き高齢者住宅', 'senior housing')
+      COMMENT = '高齢者対応型共同住宅数のうちサービス付き高齢者住宅数',
+
+    -- =========================================================
+    -- 2) 建築年代（老朽化・更新投資の示唆）
+    -- =========================================================
+    pr."1970年以前建築住宅数" AS "1970年以前建築住宅数"
+      WITH SYNONYMS ('老朽化', '築古', 'pre-1970', 'aging housing')
+      COMMENT = '1970年以前建築住宅数',
+
+    pr."1971～1980年建築住宅数" AS "1971～1980年建築住宅数"
+      WITH SYNONYMS ('1970年代', 'aging housing', 'renovation')
+      COMMENT = '1971～1980年建築住宅数',
+
+    pr."1981～1990年建築住宅数" AS "1981～1990年建築住宅数"
+      WITH SYNONYMS ('1980年代', 'stock', 'renovation')
+      COMMENT = '1981～1990年建築住宅数',
+
+    pr."1991～2000年建築住宅数" AS "1991～2000年建築住宅数"
+      WITH SYNONYMS ('1990年代', 'stock')
+      COMMENT = '1991～2000年建築住宅数',
+
+    pr."2016～2020年建築住宅数" AS "2016～2020年建築住宅数"
+      WITH SYNONYMS ('新しい住宅', 'newer stock')
+      COMMENT = '2016～2020年建築住宅数',
+
+    pr."2021～2023年9月建築住宅数" AS "2021～2023年9月建築住宅数"
+      WITH SYNONYMS ('直近建築', 'newest stock', 'recent construction')
+      COMMENT = '2021～2023年9月建築住宅数',
+
+    -- =========================================================
+    -- 3) 着工・滅失（需要/供給・更新の示唆）
+    -- =========================================================
+    pr."着工居住用建築物数" AS "着工居住用建築物数"
+      WITH SYNONYMS ('着工', 'construction starts', 'building starts', '供給')
+      COMMENT = '着工居住用建築物数',
+
+    pr."着工新設住宅戸数" AS "着工新設住宅戸数"
+      WITH SYNONYMS ('新設住宅', 'housing starts', 'new housing units')
+      COMMENT = '着工新設住宅戸数',
+
+    pr."着工新設持家数" AS "着工新設持家数"
+      WITH SYNONYMS ('持家新設', 'owner-occupied starts')
+      COMMENT = '着工新設持家数',
+
+    pr."着工新設貸家数" AS "着工新設貸家数"
+      WITH SYNONYMS ('賃貸新設', 'rental starts')
+      COMMENT = '着工新設貸家数',
+
+    pr."着工新設分譲住宅数" AS "着工新設分譲住宅数"
+      WITH SYNONYMS ('分譲', 'for-sale condos', 'condominium starts')
+      COMMENT = '着工新設分譲住宅数',
+
+    pr."滅失住宅戸数" AS "滅失住宅戸数"
+      WITH SYNONYMS ('滅失', 'demolition', 'loss of housing', '更新')
+      COMMENT = '滅失住宅戸数',
+
+    pr."除却住宅戸数" AS "除却住宅戸数"
+      WITH SYNONYMS ('除却', 'demolition', 'removal')
+      COMMENT = '除却住宅戸数',
+
+    -- =========================================================
+    -- 4) 居住水準（広さ・面積：住環境の質）
+    -- =========================================================
+    pr."1住宅当たり居住室数" AS "1住宅当たり居住室数"
+      WITH SYNONYMS ('居住室数', 'rooms per dwelling', '住環境')
+      COMMENT = '1住宅当たり居住室数',
+
+    pr."1住宅当たり居住室の畳数" AS "1住宅当たり居住室の畳数"
+      WITH SYNONYMS ('畳数', 'tatami', '居住の広さ')
+      COMMENT = '1住宅当たり居住室の畳数',
+
+    pr."1住宅当たり延べ面積" AS "1住宅当たり延べ面積"
+      WITH SYNONYMS ('延べ面積', 'floor area', 'm2', 'sqm')
+      COMMENT = '1住宅当たり延べ面積',
+
+    pr."最低居住面積水準以上の主世帯数" AS "最低居住面積水準以上の主世帯数"
+      WITH SYNONYMS ('最低居住面積水準', 'minimum living area standard')
+      COMMENT = '最低居住面積水準以上の主世帯数',
+
+    pr."誘導居住面積水準以上の主世帯数" AS "誘導居住面積水準以上の主世帯数"
+      WITH SYNONYMS ('誘導居住面積水準', 'recommended living area standard')
+      COMMENT = '誘導居住面積水準以上の主世帯数',
+
+    -- =========================================================
+    -- 5) 省エネ・創エネ・耐震（改修/設備更新の示唆）
+    -- =========================================================
+    pr."太陽光を利用した発電機器のある住宅数" AS "太陽光を利用した発電機器のある住宅数"
+      WITH SYNONYMS ('太陽光', 'PV', 'solar power', 'photovoltaic', '脱炭素')
+      COMMENT = '太陽光を利用した発電機器のある住宅数',
+
+    pr."太陽熱を利用した温水機器等のある住宅数" AS "太陽熱を利用した温水機器等のある住宅数"
+      WITH SYNONYMS ('太陽熱', 'solar thermal', '温水機器')
+      COMMENT = '太陽熱を利用した温水機器等のある住宅数',
+
+    pr."二重以上のサッシ又は複層ガラスの窓のある住宅数" AS "二重以上のサッシ又は複層ガラスの窓のある住宅数"
+      WITH SYNONYMS ('二重サッシ', '複層ガラス', 'double glazing', '省エネ改修')
+      COMMENT = '二重以上のサッシ又は複層ガラスの窓のある住宅数',
+
+    pr."2019年以降における住宅の耐震改修工事をした持ち家総数" AS "2019年以降における住宅の耐震改修工事をした持ち家総数"
+      WITH SYNONYMS ('耐震改修', 'seismic retrofit', '防災', 'レジリエンス')
+      COMMENT = '2019年以降における住宅の耐震改修工事をした持ち家総数',
+
+    pr."オートロック式の共同住宅に住む主世帯数" AS "オートロック式の共同住宅に住む主世帯数"
+      WITH SYNONYMS ('オートロック', 'security', '防犯')
+      COMMENT = 'オートロック式の共同住宅に住む主世帯数',
+
+    -- =========================================================
+    -- 6) エネルギー・水道・廃棄物（インフラ維持管理の示唆）
+    -- =========================================================
+    pr."発電電力量" AS "発電電力量"
+      WITH SYNONYMS ('発電', 'electricity generation', '供給')
+      COMMENT = '発電電力量',
+
+    pr."電力需要量" AS "電力需要量"
+      WITH SYNONYMS ('電力需要', 'electricity demand', '需要')
+      COMMENT = '電力需要量',
+
+    pr."上水道給水人口" AS "上水道給水人口"
+      WITH SYNONYMS ('上水道', 'water supply', '給水人口')
+      COMMENT = '上水道給水人口',
+
+    pr."非水洗化人口" AS "非水洗化人口"
+      WITH SYNONYMS ('非水洗', 'sanitation gap', '衛生')
+      COMMENT = '非水洗化人口',
+
+    pr."水洗化率（浄化槽人口）" AS "水洗化率（浄化槽人口）"
+      WITH SYNONYMS ('水洗化率', '浄化槽', 'sanitation rate')
+      COMMENT = '水洗化率（浄化槽人口）',
+
+    pr."ごみのリサイクル率" AS "ごみのリサイクル率"
+      WITH SYNONYMS ('リサイクル率', 'recycling rate', '循環')
+      COMMENT = 'ごみのリサイクル率',
+
+    pr."最終処分場残余容量" AS "最終処分場残余容量"
+      WITH SYNONYMS ('残余容量', 'remaining capacity', 'landfill capacity')
+      COMMENT = '最終処分場残余容量',
+
+    -- =========================================================
+    -- 7) 道路・交通（舗装/密度：維持更新の示唆）
+    -- =========================================================
+    pr."道路実延長" AS "道路実延長"
+      WITH SYNONYMS ('道路延長', 'road length', '道路ネットワーク')
+      COMMENT = '道路実延長',
+
+    pr."舗装道路実延長" AS "舗装道路実延長"
+      WITH SYNONYMS ('舗装', 'paved roads', '維持管理')
+      COMMENT = '舗装道路実延長',
+
+    pr."軽自動車等台数" AS "軽自動車等台数"
+      WITH SYNONYMS ('軽自動車', 'kei cars', '交通需要')
+      COMMENT = '軽自動車等台数',
+
+    pr."原動機付自転車台数" AS "原動機付自転車台数"
+      WITH SYNONYMS ('原付', 'moped', '二輪')
+      COMMENT = '原動機付自転車台数',
+
+    -- =========================================================
+    -- 8) 通信（地域の接続性・防災通信）
+    -- =========================================================
+    pr."携帯電話・PHS契約数" AS "携帯電話・PHS契約数"
+      WITH SYNONYMS ('携帯契約', 'mobile subscriptions', '通信需要')
+      COMMENT = '携帯電話・PHS契約数',
+
+    pr."ブロードバンドサービス契約数（3．9－4世代携帯電話アクセスサービス契約数を除く）" AS "ブロードバンドサービス契約数（3．9－4世代携帯電話アクセスサービス契約数を除く）"
+      WITH SYNONYMS ('ブロードバンド', 'broadband', 'internet', 'デジタル基盤')
+      COMMENT = 'ブロードバンドサービス契約数（3．9－4世代携帯電話アクセスサービス契約数を除く）',
+
+    pr."公衆電話設置台数" AS "公衆電話設置台数"
+      WITH SYNONYMS ('公衆電話', 'disaster communication', '防災通信')
+      COMMENT = '公衆電話設置台数',
+
+    -- =========================================================
+    -- 9) 都市計画・公園（都市機能・住環境）
+    -- =========================================================
+    pr."用途地域面積" AS "用途地域面積"
+      WITH SYNONYMS ('用途地域', 'zoning', 'land use')
+      COMMENT = '用途地域面積',
+
+    pr."市街化区域面積" AS "市街化区域面積"
+      WITH SYNONYMS ('市街化区域', 'urbanized area')
+      COMMENT = '市街化区域面積',
+
+    pr."市街化調整区域面積" AS "市街化調整区域面積"
+      WITH SYNONYMS ('市街化調整区域', 'urbanization control', '開発制約')
+      COMMENT = '市街化調整区域面積',
+
+    pr."都市公園数" AS "都市公園数"
+      WITH SYNONYMS ('都市公園', 'parks', 'urban parks')
+      COMMENT = '都市公園数',
+
+    pr."都市公園面積" AS "都市公園面積"
+      WITH SYNONYMS ('公園面積', 'park area', 'green space')
+      COMMENT = '都市公園面積'
+  )
+
+  DIMENSIONS (
+    pr."調査年" AS "調査年"
+      WITH SYNONYMS ('年', '年度', 'survey year', 'year', '時点')
+      COMMENT = '調査年',
+
+    pr."地域" AS "地域"
+      WITH SYNONYMS ('都道府県', 'prefecture', 'region', 'area', '自治体')
+      COMMENT = '地域（都道府県など）'
+
+  );
+
+-- ================================================================
+-- Semantic View 7: 居住社会生活情報
+-- ================================================================
+CREATE OR REPLACE SEMANTIC VIEW PREF_RES_SOCIAL_LIFE_PROPOSAL_SEMANTIC
+  TABLES (
+    pr AS FDUA_COMPETITION.PUBLIC.PREFECTURE_RESIDENTIAL_SOCIAL_LIFE_INFO
+      WITH SYNONYMS (
+        '都道府県 居住 社会生活 統合',
+        '地域インフラ',
+        '建築インフラ提案',
+        'proposal evidence',
+        'regional infrastructure indicators',
+        'housing and infrastructure'
+      )
+      COMMENT = '建築・インフラ企業の地域提案書作成の根拠として使う統合セマンティックビュー（住宅/インフラ/都市機能/生活利便の横断指標）'
+  )
+
+  FACTS (
+    -- =========================================================
+    -- 1) 住宅市場・構成（需要/供給の示唆）
+    -- =========================================================
+    pr."着工新設住宅比率" AS "着工新設住宅比率"
+      WITH SYNONYMS ('着工', '新設住宅', 'housing starts', 'construction', '供給')
+      COMMENT = '着工新設住宅比率',
+
+    pr."着工新設持ち家比率" AS "着工新設持ち家比率"
+      WITH SYNONYMS ('新設持ち家', 'owner-occupied starts', '分譲', '持家新設')
+      COMMENT = '着工新設持ち家比率',
+
+    pr."着工新設貸家比率" AS "着工新設貸家比率"
+      WITH SYNONYMS ('新設貸家', 'rental starts', '賃貸供給', '貸家新設')
+      COMMENT = '着工新設貸家比率',
+
+    pr."持ち家比率" AS "持ち家比率"
+      WITH SYNONYMS ('持ち家', 'owner-occupied', 'ownership rate', '資産形成')
+      COMMENT = '持ち家比率',
+
+    pr."借家比率" AS "借家比率"
+      WITH SYNONYMS ('借家', '賃貸', 'rental rate', '賃貸需要')
+      COMMENT = '借家比率',
+
+    pr."民営借家比率" AS "民営借家比率"
+      WITH SYNONYMS ('民営借家', 'private rental', '民間賃貸', '賃貸市場')
+      COMMENT = '民営借家比率',
+
+    pr."一戸建住宅比率" AS "一戸建住宅比率"
+      WITH SYNONYMS ('一戸建', 'detached house', '戸建て', '低層住宅')
+      COMMENT = '一戸建住宅比率',
+
+    pr."長屋建住宅比率" AS "長屋建住宅比率"
+      WITH SYNONYMS ('長屋', 'row house', 'terraced house')
+      COMMENT = '長屋建住宅比率',
+
+    pr."共同住宅比率" AS "共同住宅比率"
+      WITH SYNONYMS ('共同住宅', '集合住宅', 'apartment', 'multi-family', '中高層')
+      COMMENT = '共同住宅比率',
+
+    pr."空き家比率" AS "空き家比率"
+      WITH SYNONYMS ('空き家', 'vacancy rate', '遊休', 'ストック課題', 'リノベ需要')
+      COMMENT = '空き家比率',
+
+    -- =========================================================
+    -- 2) 居住水準（住まいの質 / 改修・更新の示唆）
+    -- =========================================================
+    pr."居住室数（1住宅当たり）" AS "居住室数（1住宅当たり）"
+      WITH SYNONYMS ('居住室数', 'rooms', 'rooms per dwelling', '居住の広さ')
+      COMMENT = '居住室数（1住宅当たり）',
+
+    pr."居住室数（1住宅当たり）（持ち家）" AS "居住室数（1住宅当たり）（持ち家）"
+      WITH SYNONYMS ('持ち家', 'rooms owner-occupied')
+      COMMENT = '居住室数（1住宅当たり）（持ち家）',
+
+    pr."居住室数（1住宅当たり）（借家）" AS "居住室数（1住宅当たり）（借家）"
+      WITH SYNONYMS ('借家', 'rooms rental')
+      COMMENT = '居住室数（1住宅当たり）（借家）',
+
+    pr."持ち家住宅の居住室の畳数（1住宅当たり）" AS "持ち家住宅の居住室の畳数（1住宅当たり）"
+      WITH SYNONYMS ('畳', 'tatami', 'floor area', '住宅の広さ')
+      COMMENT = '持ち家住宅の居住室の畳数（1住宅当たり）',
+
+    pr."借家住宅の居住室の畳数（1住宅当たり）" AS "借家住宅の居住室の畳数（1住宅当たり）"
+      WITH SYNONYMS ('畳', 'tatami', 'rental tatami')
+      COMMENT = '借家住宅の居住室の畳数（1住宅当たり）',
+
+    pr."持ち家住宅の延べ面積（1住宅当たり）" AS "持ち家住宅の延べ面積（1住宅当たり）"
+      WITH SYNONYMS ('延べ面積', 'floor area', 'm2', 'sqm')
+      COMMENT = '持ち家住宅の延べ面積（1住宅当たり）',
+
+    pr."借家住宅の延べ面積（1住宅当たり）" AS "借家住宅の延べ面積（1住宅当たり）"
+      WITH SYNONYMS ('延べ面積', 'floor area', 'rental floor area')
+      COMMENT = '借家住宅の延べ面積（1住宅当たり）',
+
+    pr."着工新設持ち家住宅の床面積（1住宅当たり）" AS "着工新設持ち家住宅の床面積（1住宅当たり）"
+      WITH SYNONYMS ('床面積', 'new owner-occupied', '新設床面積')
+      COMMENT = '着工新設持ち家住宅の床面積（1住宅当たり）',
+
+    pr."着工新設貸家住宅の床面積（1住宅当たり）" AS "着工新設貸家住宅の床面積（1住宅当たり）"
+      WITH SYNONYMS ('床面積', 'new rental', '新設床面積')
+      COMMENT = '着工新設貸家住宅の床面積（1住宅当たり）',
+
+    pr."持ち家住宅の畳数（1人当たり）" AS "持ち家住宅の畳数（1人当たり）"
+      WITH SYNONYMS ('1人当たり', 'per capita', '居住余裕', 'tatami per person')
+      COMMENT = '持ち家住宅の畳数（1人当たり）',
+
+    pr."借家住宅の畳数（1人当たり）" AS "借家住宅の畳数（1人当たり）"
+      WITH SYNONYMS ('1人当たり', 'per capita', 'tatami per person rental')
+      COMMENT = '借家住宅の畳数（1人当たり）',
+
+    pr."最低居住面積水準以上世帯割合" AS "最低居住面積水準以上世帯割合"
+      WITH SYNONYMS ('最低居住面積水準', 'minimum living area standard', '居住水準')
+      COMMENT = '最低居住面積水準以上世帯割合',
+
+    pr."家計を主に支える者が雇用者である主世帯比率（通勤時間1時間30分以上）（主世帯千世帯当たり）" AS "家計を主に支える者が雇用者である主世帯比率（通勤時間1時間30分以上）（主世帯千世帯当たり）"
+      WITH SYNONYMS ('通勤', '長時間通勤', 'commute', 'over 90 minutes', '交通課題')
+      COMMENT = '家計を主に支える者が雇用者である主世帯比率（通勤時間1時間30分以上）（主世帯千世帯当たり）',
+
+    pr."民営賃貸住宅の家賃（1か月3.3m2当たり）" AS "民営賃貸住宅の家賃（1か月3.3m2当たり）"
+      WITH SYNONYMS ('家賃', 'rent', 'private rental rent', 'コスト', '3.3m2')
+      COMMENT = '民営賃貸住宅の家賃（1か月3.3m2当たり）',
+
+    pr."着工居住用建築物工事費予定額（床面積1m2当たり）" AS "着工居住用建築物工事費予定額（床面積1m2当たり）"
+      WITH SYNONYMS ('工事費', '建築費', 'construction cost', 'cost per m2', '単価')
+      COMMENT = '着工居住用建築物工事費予定額（床面積1m2当たり）',
+
+    -- =========================================================
+    -- 3) エネルギー（需給/脱炭素/設備更新の示唆）
+    -- =========================================================
+    pr."ガソリン販売量" AS "ガソリン販売量"
+      WITH SYNONYMS ('ガソリン', '燃料', 'fuel', 'gasoline sales', '交通需要')
+      COMMENT = 'ガソリン販売量',
+
+    pr."発電電力量" AS "発電電力量"
+      WITH SYNONYMS ('発電', 'electricity generation', 'generated electricity', '供給')
+      COMMENT = '発電電力量',
+
+    pr."電力需要量" AS "電力需要量"
+      WITH SYNONYMS ('電力需要', 'power demand', 'electricity demand', '需要')
+      COMMENT = '電力需要量',
+
+    -- =========================================================
+    -- 4) 水道・衛生（更新/耐災害/維持管理の示唆）
+    -- =========================================================
+    pr."上水道給水人口比率（2012－）" AS "上水道給水人口比率（2012－）"
+      WITH SYNONYMS ('上水道', '水道', 'water supply rate', '給水', 'インフラ維持')
+      COMMENT = '上水道給水人口比率（2012－）',
+
+    pr."し尿処理人口比率（2012－）" AS "し尿処理人口比率（2012－）"
+      WITH SYNONYMS ('し尿処理', '衛生', 'sanitation', 'treatment rate', '下水代替')
+      COMMENT = 'し尿処理人口比率（2012－）',
+
+    -- =========================================================
+    -- 5) 廃棄物・最終処分（処理能力/循環/施設更新の示唆）
+    -- =========================================================
+    pr."ごみのリサイクル率" AS "ごみのリサイクル率"
+      WITH SYNONYMS ('リサイクル', 'recycling rate', '循環', '資源化')
+      COMMENT = 'ごみのリサイクル率',
+
+    pr."ごみ埋立率" AS "ごみ埋立率"
+      WITH SYNONYMS ('埋立', 'landfill rate', '最終処分', '処分依存')
+      COMMENT = 'ごみ埋立率',
+
+    pr."最終処分場残余容量" AS "最終処分場残余容量"
+      WITH SYNONYMS ('残余容量', 'remaining capacity', 'landfill capacity', '逼迫度')
+      COMMENT = '最終処分場残余容量',
+
+    -- =========================================================
+    -- 6) 生活利便施設（地域サービスの厚み）
+    -- =========================================================
+    pr."理容・美容所数（人口10万人当たり）" AS "理容・美容所数（人口10万人当たり）"
+      WITH SYNONYMS ('理容', '美容', 'hair salon', 'barber', 'サービス密度')
+      COMMENT = '理容・美容所数（人口10万人当たり）',
+
+    pr."クリーニング所数（人口10万人当たり）" AS "クリーニング所数（人口10万人当たり）"
+      WITH SYNONYMS ('クリーニング', 'dry cleaning', 'サービス密度')
+      COMMENT = 'クリーニング所数（人口10万人当たり）',
+
+    pr."公衆浴場数（人口10万人当たり）" AS "公衆浴場数（人口10万人当たり）"
+      WITH SYNONYMS ('公衆浴場', '銭湯', 'public bath', '生活インフラ')
+      COMMENT = '公衆浴場数（人口10万人当たり）',
+
+    pr."給油所数（道路実延長100km当たり）" AS "給油所数（道路実延長100km当たり）"
+      WITH SYNONYMS ('給油所', 'gas station', '道路100km当たり', '交通サービス')
+      COMMENT = '給油所数（道路実延長100km当たり）',
+
+    pr."郵便局数（可住地面積100km2当たり）" AS "郵便局数（可住地面積100km2当たり）"
+      WITH SYNONYMS ('郵便局', 'post office', '地域サービス', '可住地')
+      COMMENT = '郵便局数（可住地面積100km2当たり）',
+
+    -- =========================================================
+    -- 7) 通信（デジタル基盤・地域の接続性）
+    -- =========================================================
+    pr."電話加入数（人口千人当たり）" AS "電話加入数（人口千人当たり）"
+      WITH SYNONYMS ('固定電話', 'telephone subscriptions', 'per 1000', '通信基盤')
+      COMMENT = '電話加入数（人口千人当たり）',
+
+    pr."住宅用電話加入数（人口千人当たり）" AS "住宅用電話加入数（人口千人当たり）"
+      WITH SYNONYMS ('住宅用電話', 'residential fixed line', '通信基盤')
+      COMMENT = '住宅用電話加入数（人口千人当たり）',
+
+    pr."公衆電話設置台数（人口千人当たり）" AS "公衆電話設置台数（人口千人当たり）"
+      WITH SYNONYMS ('公衆電話', 'phone booths', '災害時通信', '防災通信')
+      COMMENT = '公衆電話設置台数（人口千人当たり）',
+
+    pr."携帯電話契約数（人口千人当たり）" AS "携帯電話契約数（人口千人当たり）"
+      WITH SYNONYMS ('携帯電話', 'mobile subscriptions', 'スマホ', '通信需要')
+      COMMENT = '携帯電話契約数（人口千人当たり）',
+
+    -- =========================================================
+    -- 8) 道路（維持更新・舗装率・ネットワーク密度）
+    -- =========================================================
+    pr."道路実延長（総面積1km2当たり）" AS "道路実延長（総面積1km2当たり）"
+      WITH SYNONYMS ('道路延長', 'road length', 'per km2', '道路密度', 'インフラ老朽化')
+      COMMENT = '道路実延長（総面積1km2当たり）',
+
+    pr."主要道路実延長（総面積1km2当たり）" AS "主要道路実延長（総面積1km2当たり）"
+      WITH SYNONYMS ('主要道路', 'major roads', 'per km2', '幹線道路')
+      COMMENT = '主要道路実延長（総面積1km2当たり）',
+
+    pr."主要道路舗装率" AS "主要道路舗装率"
+      WITH SYNONYMS ('舗装率', 'paving rate', '補修', '維持管理')
+      COMMENT = '主要道路舗装率',
+
+    pr."市町村道舗装率" AS "市町村道舗装率"
+      WITH SYNONYMS ('市町村道', 'municipal roads', '舗装率', '維持管理')
+      COMMENT = '市町村道舗装率',
+
+    -- =========================================================
+    -- 9) 都市計画（用途地域）・公園（都市機能）
+    -- =========================================================
+    pr."市街化調整区域面積比率" AS "市街化調整区域面積比率"
+      WITH SYNONYMS ('市街化調整区域', 'urbanization control', '開発制約', 'スプロール抑制')
+      COMMENT = '市街化調整区域面積比率',
+
+    pr."住居専用地域面積比率" AS "住居専用地域面積比率"
+      WITH SYNONYMS ('住居専用', 'exclusive residential zone', '住宅地')
+      COMMENT = '住居専用地域面積比率',
+
+    pr."住居専用・住居地域面積比率" AS "住居専用・住居地域面積比率"
+      WITH SYNONYMS ('住居地域', 'residential zones', '住宅地比率')
+      COMMENT = '住居専用・住居地域面積比率',
+
+    pr."近隣商業地域面積比率" AS "近隣商業地域面積比率"
+      WITH SYNONYMS ('近隣商業', 'neighborhood commercial', '生活圏商業')
+      COMMENT = '近隣商業地域面積比率',
+
+    pr."商業・近隣商業地域面積比率" AS "商業・近隣商業地域面積比率"
+      WITH SYNONYMS ('商業地域', 'commercial zones', '中心市街地')
+      COMMENT = '商業・近隣商業地域面積比率',
+
+    pr."工業・準工業地域面積比率" AS "工業・準工業地域面積比率"
+      WITH SYNONYMS ('工業地域', '準工業地域', 'industrial zones', '産業立地')
+      COMMENT = '工業・準工業地域面積比率',
+
+    pr."工業専用地域面積比率" AS "工業専用地域面積比率"
+      WITH SYNONYMS ('工業専用', 'exclusive industrial', '工業団地')
+      COMMENT = '工業専用地域面積比率',
+
+    pr."都市公園面積（人口1人当たり）" AS "都市公園面積（人口1人当たり）"
+      WITH SYNONYMS ('都市公園', 'park area', 'per capita', '緑地', '住環境')
+      COMMENT = '都市公園面積（人口1人当たり）',
+
+    pr."都市公園数（可住地面積100km2当たり）" AS "都市公園数（可住地面積100km2当たり）"
+      WITH SYNONYMS ('都市公園数', 'urban parks', 'per 100km2')
+      COMMENT = '都市公園数（可住地面積100km2当たり）',
+
+    pr."街区公園数（可住地面積100km2当たり）" AS "街区公園数（可住地面積100km2当たり）"
+      WITH SYNONYMS ('街区公園', 'block parks', '近隣公園', 'per 100km2')
+      COMMENT = '街区公園数（可住地面積100km2当たり）',
+
+    pr."近隣公園数（可住地面積100km2当たり）" AS "近隣公園数（可住地面積100km2当たり）"
+      WITH SYNONYMS ('近隣公園', 'district parks', 'per 100km2')
+      COMMENT = '近隣公園数（可住地面積100km2当たり）',
+
+    pr."運動公園数（可住地面積100km2当たり）" AS "運動公園数（可住地面積100km2当たり）"
+      WITH SYNONYMS ('運動公園', 'sports parks', 'per 100km2')
+      COMMENT = '運動公園数（可住地面積100km2当たり）'
+  )
+
+  DIMENSIONS (
+    pr."調査年" AS "調査年"
+      WITH SYNONYMS ('年', '年度', 'survey year', 'year', '時点')
+      COMMENT = '調査年',
+
+    pr."地域" AS "地域"
+      WITH SYNONYMS ('都道府県', 'prefecture', 'region', 'area', '自治体')
+      COMMENT = '地域（都道府県など）'
+
+  );
+
+
 -- ================================================================
 -- 確認
 -- ================================================================
