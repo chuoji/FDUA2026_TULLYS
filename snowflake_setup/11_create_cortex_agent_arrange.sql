@@ -15,21 +15,15 @@ USE WAREHOUSE WH_XSMALL;
 SHOW SEMANTIC VIEWS LIKE '%SEMANTIC%';
 SHOW SEMANTIC VIEWS LIKE 'FINANCIAL_DATA_%';
 
--- 期待される結果: 4つのSemantic View
--- - FINANCIAL_DATA_BASIC_AND_PL
--- - FINANCIAL_DATA_ASSETS
--- - FINANCIAL_DATA_LIABILITIES_AND_EQUITY
--- - SECURITIES_REPORTS_SEMANTIC
-
 -- ================================================================
 -- Step 2: Cortex Agent作成
 -- ================================================================
 -- 4つのSemantic ViewをCortex Analystツールとして紐付け
 
-CREATE OR REPLACE AGENT FINANCIAL_DATA_AGENT
+CREATE OR REPLACE AGENT FINANCIAL_DATA_AGENT_ARRANGE
   COMMENT = '財務データ分析エージェント: 4つのSemantic Viewを使用して財務データと有価証券報告書を分析'
   PROFILE = '{
-    "display_name": "財務データアナリスト",
+    "display_name": "財務データアナリスト（チャンク版）",
     "avatar": "🏢",
     "color": "#1E3A8A"
   }'
@@ -72,7 +66,7 @@ instructions:
        - キャッシュフロー（3年分）
 
     4. SecuritiesReports
-       - 有価証券報告書 full_text を取得
+       - 有価証券報告書 chunk_text_arrange を取得
        - 以下観点で整理
          * 事業内容
          * 経営方針
@@ -272,10 +266,11 @@ tools:
       type: "cortex_analyst_text_to_sql"
       name: "SecuritiesReports"
       description: |
-        有価証券報告書のPDF全文とメタデータを分析するツール。
+        有価証券報告書のPDFのチャンクごとの本文とメタデータを分析するツール。
         以下のデータを含みます:
-        - full_text: 有価証券報告書のPDF全文（重要: Cortex Analyst検索対象）
+        - chunk_text_arrange: 有価証券報告書のチャンクごとの本文（重要: Cortex Analyst検索対象）
         - 文書タイトル、提出日、決算期、決算年度
+        - チャンクの開始位置、終了位置
         - ページ数、文字数、単語数
         - PDFファイル名、抽出日時
 
@@ -365,7 +360,7 @@ tool_resources:
       warehouse: COMPUTE_WH
 
   SecuritiesReports:
-    semantic_view: "FDUA_COMPETITION.PUBLIC.SECURITIES_REPORTS_SEMANTIC"
+    semantic_view: "FDUA_COMPETITION.PUBLIC.SECURITIES_REPORTS_SEMANTIC_CHUNKS"
     execution_environment:
       type: warehouse
       warehouse: COMPUTE_WH
