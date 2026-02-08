@@ -38,137 +38,259 @@ from datetime import datetime
 from io import BytesIO
 from snowflake.snowpark import Session
 from docx import Document
-from docx.shared import Pt, Inches
+from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-import markdown2
+from docx.enum.table import WD_TABLE_ALIGNMENT
+
+# ------------------------------------------------------------
+# 文字化け（□）対策：日本語フォントを明示
+# ※環境によっては Word 側にフォントが無いと置換されるので、
+#   まずは一般的なフォント名を指定（Meiryo / Yu Gothic / MS Gothic）
+# ------------------------------------------------------------
+JP_FONT = "Meiryo"
+
+def _apply_jp_font_to_paragraph(paragraph, size_pt: int = 11):
+    """段落内の run に日本語フォントを強制適用（□対策）"""
+    for run in paragraph.runs:
+        run.font.name = JP_FONT
+        run.font.size = Pt(size_pt)
+
+def _compact_paragraph(paragraph, line_spacing: float = 1.15, space_after_pt: int = 2, space_before_pt: int = 0):
+    """段落の余白を詰めてページ膨張を防ぐ"""
+    fmt = paragraph.paragraph_format
+    fmt.line_spacing = line_spacing
+    fmt.space_before = Pt(space_before_pt)
+    fmt.space_after = Pt(space_after_pt)
+
+def _is_markdown_table_row(line: str) -> bool:
+    s = line.strip()
+    return s.startswith("|") and "|" in s
+
+def _is_table_separator_row(line: str) -> bool:
+    """
+    |---|---| や |:---|---:| のような区切り行を判定
+    """
+    s = line.strip().strip("|").strip()
+    if not s:
+        return False
+    parts = [p.strip() for p in s.split("|")]
+    if len(parts) < 2:
+        return False
+    for p in parts:
+        if not p:
+            return False
+        # :---: などを許可
+        p2 = p.replace(":", "")
+        if not p2 or set(p2) != {"-"}:
+            return False
+    return True
+
+def _parse_md_table_lines(table_lines):
+    """Markdown表の行をセル配列に変換（区切り行は除外）"""
+    rows = []
+    for line in table_lines:
+        line = line.strip()
+        if not line:
+            continue
+        if _is_table_separator_row(line):
+            continue
+        line = line.strip().strip("|")
+        cells = [c.strip() for c in line.split("|")]
+        rows.append(cells)
+    return rows
+
+def _add_markdown_table(doc: Document, table_lines):
+    """Markdown表を Word 表に変換して追加"""
+    rows = _parse_md_table_lines(table_lines)
+    if not rows:
+        return
+
+    header = rows[0]
+    body = rows[1:] if len(rows) > 1 else []
+
+    # 列数を header に合わせる（不足行は空で埋める/超過は切る）
+    ncols = len(header)
+    def _fit(row):
+        if len(row) < ncols:
+            return row + [""] * (ncols - len(row))
+        if len(row) > ncols:
+            return row[:ncols]
+        return row
+
+    header = _fit(header)
+    body = [_fit(r) for r in body]
+
+    table = doc.add_table(rows=1, cols=ncols)
+    table.style = "Table Grid"
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+    # ヘッダー
+    for i, text in enumerate(header):
+        cell = table.rows[0].cells[i]
+        p = cell.paragraphs[0]
+        p.text = text
+        _apply_jp_font_to_paragraph(p, size_pt=11)
+
+    # 本文
+    for r in body:
+        row_cells = table.add_row().cells
+        for i, text in enumerate(r):
+            cell = row_cells[i]
+            p = cell.paragraphs[0]
+            p.text = text
+            _apply_jp_font_to_paragraph(p, size_pt=11)
+
+    # 表の後に少しだけ間隔（空段落は作らず、次段落の余白で吸収したいが簡易に1段落）
+    p = doc.add_paragraph("")
+    _compact_paragraph(p, line_spacing=1.0, space_after_pt=4, space_before_pt=0)
 
 
 def export_to_word(session: Session, company_code: int, proposal_text: str, phase: str):
     """
     Markdown形式の提案書をWord（.docx）形式に変換してStageにアップロード
-
-    Args:
-        session: Snowpark Session（自動的に渡される）
-        company_code: 企業コード
-        proposal_text: Markdown形式の提案書本文
-        phase: フェーズ名（phase1, phase2, phase3, complete）
-
-    Returns:
-        str: JSON文字列（file_path, presigned_url, file_size_kb, filename）
     """
 
-    # 現在時刻（タイムスタンプ用）
     now = datetime.now()
-    timestamp = now.strftime("%Y%m%d_%H%M")
-
-    # ファイル名生成
     filename = f"{company_code}.docx"
     stage_path = f"@GENERATED_PROPOSALS/{filename}"
 
-    # Wordドキュメント作成（Streamlit実装と同じ構造）
     doc = Document()
 
     # タイトル
-    title = doc.add_heading('成長戦略提案書', 0)
+    title = doc.add_heading("成長戦略提案書", 0)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    _apply_jp_font_to_paragraph(title, size_pt=18)
 
-    # サブタイトル（企業コードとフェーズ）
+    # サブタイトル
     phase_name_map = {
-        'phase1': 'フェーズ1: 企業概要・分析',
-        'phase2': 'フェーズ2: 成長戦略・提案',
-        'phase3': 'フェーズ3: 効果試算・ロードマップ',
-        'complete': '完全版（全フェーズ統合）'
+        "phase1": "フェーズ1: 企業概要・分析",
+        "phase2": "フェーズ2: 成長戦略・提案",
+        "phase3": "フェーズ3: 効果試算・ロードマップ",
+        "complete": "完全版（全フェーズ統合）",
     }
-    subtitle = doc.add_paragraph(
-        f'企業コード: {company_code} - {phase_name_map.get(phase, phase)}'
-    )
+    subtitle = doc.add_paragraph(f"企業コード: {company_code} - {phase_name_map.get(phase, phase)}")
     subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    subtitle_format = subtitle.runs[0].font
-    subtitle_format.size = Pt(14)
+    _compact_paragraph(subtitle, line_spacing=1.1, space_after_pt=2)
+    _apply_jp_font_to_paragraph(subtitle, size_pt=14)
 
     # 日付
-    date_para = doc.add_paragraph(
-        f'作成日: {now.strftime("%Y年%m月%d日")}'
-    )
+    date_para = doc.add_paragraph(f"作成日: {now.strftime('%Y年%m月%d日')}")
     date_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    _compact_paragraph(date_para, line_spacing=1.0, space_after_pt=8)
+    _apply_jp_font_to_paragraph(date_para, size_pt=11)
 
-    # 改ページ
-    doc.add_page_break()
+    # ------------------------------------------------------------
+    # Markdown → Word 変換
+    #   - 空行で段落を作らない（ページ膨張防止）
+    #   - Markdown表を Word表に変換
+    #   - 文字化け対策でフォント適用
+    #   - 行間は 1.15 を基本に（1.5は膨らみやすい）
+    # ------------------------------------------------------------
+    lines = proposal_text.splitlines()
 
-    # Markdownを段落に変換（Streamlit実装と同じロジック）
-    lines = proposal_text.split('\n')
+    table_buffer = []
+    in_table = False
 
-    for line in lines:
-        line = line.strip()
+    for raw in lines:
+        line_raw = raw.rstrip("\n")
+        stripped = line_raw.strip()
 
-        if not line:
-            # 空行
-            # doc.add_paragraph()
+        # 1) 表行の収集
+        if _is_markdown_table_row(line_raw):
+            in_table = True
+            table_buffer.append(line_raw)
             continue
 
-        # Markdownヘッダーを検出
-        if line.startswith('# '):
-            doc.add_heading(line[2:], level=1)
-        elif line.startswith('## '):
-            doc.add_heading(line[3:], level=2)
-        elif line.startswith('### '):
-            doc.add_heading(line[4:], level=3)
-        elif line.startswith('#### '):
-            doc.add_heading(line[5:], level=4)
-        elif line.startswith('- ') or line.startswith('* '):
-            # 箇条書き
-            doc.add_paragraph(line[2:], style='List Bullet')
-        elif line.startswith(tuple(f'{i}. ' for i in range(1, 10))):
-            # 番号付きリスト
-            # 数字の後のドットとスペースを除去
-            content = line.split('. ', 1)[1] if '. ' in line else line
-            doc.add_paragraph(content, style='List Number')
-        else:
-            # 通常の段落
-            para = doc.add_paragraph(line)
-            para_format = para.paragraph_format
-            para_format.line_spacing = 1.5
+        # 2) 表の終了検出：表行じゃなくなったら flush
+        if in_table and not _is_markdown_table_row(line_raw):
+            _add_markdown_table(doc, table_buffer)
+            table_buffer.clear()
+            in_table = False
+            # ここで continue せず、この行も通常処理に回す
 
-    # バイナリデータとして保存（Streamlit実装と同じ）
+        # 3) 空行は段落を作らずスキップ（重要）
+        if not stripped:
+            continue
+
+        # 4) Markdownヘッダー
+        if stripped.startswith("# "):
+            h = doc.add_heading(stripped[2:], level=1)
+            _apply_jp_font_to_paragraph(h, size_pt=14)
+            _compact_paragraph(h, line_spacing=1.1, space_before_pt=6, space_after_pt=3)
+            continue
+        if stripped.startswith("## "):
+            h = doc.add_heading(stripped[3:], level=2)
+            _apply_jp_font_to_paragraph(h, size_pt=13)
+            _compact_paragraph(h, line_spacing=1.1, space_before_pt=5, space_after_pt=2)
+            continue
+        if stripped.startswith("### "):
+            h = doc.add_heading(stripped[4:], level=3)
+            _apply_jp_font_to_paragraph(h, size_pt=12)
+            _compact_paragraph(h, line_spacing=1.1, space_before_pt=4, space_after_pt=2)
+            continue
+        if stripped.startswith("#### "):
+            h = doc.add_heading(stripped[5:], level=4)
+            _apply_jp_font_to_paragraph(h, size_pt=11)
+            _compact_paragraph(h, line_spacing=1.1, space_before_pt=3, space_after_pt=1)
+            continue
+
+        # 5) 箇条書き
+        if stripped.startswith("- ") or stripped.startswith("* "):
+            p = doc.add_paragraph(stripped[2:], style="List Bullet")
+            _apply_jp_font_to_paragraph(p, size_pt=11)
+            _compact_paragraph(p, line_spacing=1.15, space_after_pt=0)
+            continue
+
+        # 6) 番号付き（1. ～ 99. まで対応）
+        m = re.match(r"^(\d+)\.\s+(.*)$", stripped)
+        if m:
+            content = m.group(2)
+            p = doc.add_paragraph(content, style="List Number")
+            _apply_jp_font_to_paragraph(p, size_pt=11)
+            _compact_paragraph(p, line_spacing=1.15, space_after_pt=0)
+            continue
+
+        # 7) 通常段落
+        p = doc.add_paragraph(stripped)
+        _apply_jp_font_to_paragraph(p, size_pt=11)
+        _compact_paragraph(p, line_spacing=1.15, space_after_pt=2)
+
+    # ループ終端で表が閉じていなければ flush
+    if in_table and table_buffer:
+        _add_markdown_table(doc, table_buffer)
+
+    # 保存（バイナリ）
     buffer = BytesIO()
     doc.save(buffer)
     buffer.seek(0)
     docx_bytes = buffer.getvalue()
 
-    # ファイルサイズ取得
-    file_size_bytes = len(docx_bytes)
-    file_size_kb = file_size_bytes / 1024
+    file_size_kb = len(docx_bytes) / 1024
 
-    # ローカルに一時保存（/tmpは実行終了時に自動削除される）
     local_path = f"/tmp/{filename}"
-    with open(local_path, 'wb') as f:
+    with open(local_path, "wb") as f:
         f.write(docx_bytes)
 
-    # StageにアップロードPUT（session.file.put()を使用）
-    # 注: session.sql("PUT ...")ではエラーになる
-    # 参考: https://qiita.com/abe_masanori/items/e761dc033c2efbc00570
     session.file.put(
         local_path,
-        '@GENERATED_PROPOSALS/',
+        "@GENERATED_PROPOSALS/",
         auto_compress=False,
-        overwrite=True  # 必須: これがないとエージェント経由でエラーになる可能性
+        overwrite=True
     )
 
-    # 事前署名付きURL生成（7日間有効）
     presigned_url_sql = f"""
         SELECT GET_PRESIGNED_URL(@GENERATED_PROPOSALS, '{filename}', 180) AS presigned_url
     """
     result = session.sql(presigned_url_sql).collect()
-    presigned_url = result[0]['PRESIGNED_URL'] if result else None
+    presigned_url = result[0]["PRESIGNED_URL"] if result else None
 
     result_dict = {
-        'file_path': stage_path,
-        'presigned_url': presigned_url,
-        'file_size_kb': round(file_size_kb, 2),
-        'filename': filename
+        "file_path": stage_path,
+        "presigned_url": presigned_url,
+        "file_size_kb": round(file_size_kb, 2),
+        "filename": filename,
     }
 
-    # JSON文字列として返す
     return json.dumps(result_dict, ensure_ascii=False)
 $$;
 
