@@ -102,8 +102,8 @@ def export_to_word(session: Session, company_code: int, proposal_text: str, phas
         line = line.strip()
 
         if not line:
-            # 空行
-            doc.add_paragraph()
+            -- # 空行
+            -- doc.add_paragraph()
             continue
 
         # Markdownヘッダーを検出
