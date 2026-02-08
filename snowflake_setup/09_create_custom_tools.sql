@@ -103,7 +103,7 @@ def export_to_word(session: Session, company_code: int, proposal_text: str, phas
 
         if not line:
             # 空行
-            doc.add_paragraph()
+            # doc.add_paragraph()
             continue
 
         # Markdownヘッダーを検出
