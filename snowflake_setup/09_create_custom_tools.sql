@@ -49,7 +49,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 # ------------------------------------------------------------
 JP_FONT = "Meiryo"
 
-def _apply_jp_font_to_paragraph(paragraph, size_pt: int = 10):
+def _apply_jp_font_to_paragraph(paragraph, size_pt: int = 9):
     """段落内の run に日本語フォントを強制適用（□対策）"""
     for run in paragraph.runs:
         run.font.name = JP_FONT
@@ -159,19 +159,19 @@ def export_to_word(session: Session, company_code: int, proposal_text: str, phas
     # タイトル
     title = doc.add_heading("成長戦略提案書", 0)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    _apply_jp_font_to_paragraph(title, size_pt=18)
+    _apply_jp_font_to_paragraph(title, size_pt=14)
 
-    # サブタイトル
-    phase_name_map = {
-        "phase1": "フェーズ1: 企業概要・分析",
-        "phase2": "フェーズ2: 成長戦略・提案",
-        "phase3": "フェーズ3: 効果試算・ロードマップ",
-        "complete": "完全版（全フェーズ統合）",
-    }
-    subtitle = doc.add_paragraph(f"企業コード: {company_code} - {phase_name_map.get(phase, phase)}")
-    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    _compact_paragraph(subtitle, line_spacing=1.1, space_after_pt=2)
-    _apply_jp_font_to_paragraph(subtitle, size_pt=14)
+    # # サブタイトル
+    # phase_name_map = {
+    #     "phase1": "フェーズ1: 企業概要・分析",
+    #     "phase2": "フェーズ2: 成長戦略・提案",
+    #     "phase3": "フェーズ3: 効果試算・ロードマップ",
+    #     "complete": "完全版（全フェーズ統合）",
+    # }
+    # subtitle = doc.add_paragraph(f"企業コード: {company_code} - {phase_name_map.get(phase, phase)}")
+    # subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    # _compact_paragraph(subtitle, line_spacing=1.1, space_after_pt=2)
+    # _apply_jp_font_to_paragraph(subtitle, size_pt=12)
 
     # 日付
     date_para = doc.add_paragraph(f"作成日: {now.strftime('%Y年%m月%d日')}")
@@ -215,29 +215,29 @@ def export_to_word(session: Session, company_code: int, proposal_text: str, phas
         # 4) Markdownヘッダー
         if stripped.startswith("# "):
             h = doc.add_heading(stripped[2:], level=1)
-            _apply_jp_font_to_paragraph(h, size_pt=13)
+            _apply_jp_font_to_paragraph(h, size_pt=12.5)
             _compact_paragraph(h, line_spacing=1.1, space_before_pt=6, space_after_pt=3)
             continue
         if stripped.startswith("## "):
             h = doc.add_heading(stripped[3:], level=2)
-            _apply_jp_font_to_paragraph(h, size_pt=12)
+            _apply_jp_font_to_paragraph(h, size_pt=11.5)
             _compact_paragraph(h, line_spacing=1.1, space_before_pt=5, space_after_pt=2)
             continue
         if stripped.startswith("### "):
             h = doc.add_heading(stripped[4:], level=3)
-            _apply_jp_font_to_paragraph(h, size_pt=11)
+            _apply_jp_font_to_paragraph(h, size_pt=10.5)
             _compact_paragraph(h, line_spacing=1.1, space_before_pt=4, space_after_pt=2)
             continue
         if stripped.startswith("#### "):
             h = doc.add_heading(stripped[5:], level=4)
-            _apply_jp_font_to_paragraph(h, size_pt=10)
+            _apply_jp_font_to_paragraph(h, size_pt=9.5)
             _compact_paragraph(h, line_spacing=1.1, space_before_pt=3, space_after_pt=1)
             continue
 
         # 5) 箇条書き
         if stripped.startswith("- ") or stripped.startswith("* "):
             p = doc.add_paragraph(stripped[2:], style="List Bullet")
-            _apply_jp_font_to_paragraph(p, size_pt=10)
+            _apply_jp_font_to_paragraph(p, size_pt=9)
             _compact_paragraph(p, line_spacing=1.15, space_after_pt=0)
             continue
 
@@ -246,13 +246,13 @@ def export_to_word(session: Session, company_code: int, proposal_text: str, phas
         if m:
             content = m.group(2)
             p = doc.add_paragraph(content, style="List Number")
-            _apply_jp_font_to_paragraph(p, size_pt=10)
+            _apply_jp_font_to_paragraph(p, size_pt=9)
             _compact_paragraph(p, line_spacing=1.15, space_after_pt=0)
             continue
 
         # 7) 通常段落
         p = doc.add_paragraph(stripped)
-        _apply_jp_font_to_paragraph(p, size_pt=10)
+        _apply_jp_font_to_paragraph(p, size_pt=9)
         _compact_paragraph(p, line_spacing=1.15, space_after_pt=2)
 
     # ループ終端で表が閉じていなければ flush
