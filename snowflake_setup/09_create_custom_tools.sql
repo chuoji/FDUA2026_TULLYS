@@ -49,7 +49,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 # ------------------------------------------------------------
 JP_FONT = "Meiryo"
 
-def _apply_jp_font_to_paragraph(paragraph, size_pt: int = 11):
+def _apply_jp_font_to_paragraph(paragraph, size_pt: int = 10):
     """段落内の run に日本語フォントを強制適用（□対策）"""
     for run in paragraph.runs:
         run.font.name = JP_FONT
@@ -129,7 +129,7 @@ def _add_markdown_table(doc: Document, table_lines):
         cell = table.rows[0].cells[i]
         p = cell.paragraphs[0]
         p.text = text
-        _apply_jp_font_to_paragraph(p, size_pt=11)
+        _apply_jp_font_to_paragraph(p, size_pt=10)
 
     # 本文
     for r in body:
@@ -138,7 +138,7 @@ def _add_markdown_table(doc: Document, table_lines):
             cell = row_cells[i]
             p = cell.paragraphs[0]
             p.text = text
-            _apply_jp_font_to_paragraph(p, size_pt=11)
+            _apply_jp_font_to_paragraph(p, size_pt=9)
 
     # 表の後に少しだけ間隔（空段落は作らず、次段落の余白で吸収したいが簡易に1段落）
     p = doc.add_paragraph("")
@@ -177,7 +177,7 @@ def export_to_word(session: Session, company_code: int, proposal_text: str, phas
     date_para = doc.add_paragraph(f"作成日: {now.strftime('%Y年%m月%d日')}")
     date_para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     _compact_paragraph(date_para, line_spacing=1.0, space_after_pt=8)
-    _apply_jp_font_to_paragraph(date_para, size_pt=11)
+    _apply_jp_font_to_paragraph(date_para, size_pt=9)
 
     # ------------------------------------------------------------
     # Markdown → Word 変換
@@ -215,29 +215,29 @@ def export_to_word(session: Session, company_code: int, proposal_text: str, phas
         # 4) Markdownヘッダー
         if stripped.startswith("# "):
             h = doc.add_heading(stripped[2:], level=1)
-            _apply_jp_font_to_paragraph(h, size_pt=14)
+            _apply_jp_font_to_paragraph(h, size_pt=13)
             _compact_paragraph(h, line_spacing=1.1, space_before_pt=6, space_after_pt=3)
             continue
         if stripped.startswith("## "):
             h = doc.add_heading(stripped[3:], level=2)
-            _apply_jp_font_to_paragraph(h, size_pt=13)
+            _apply_jp_font_to_paragraph(h, size_pt=12)
             _compact_paragraph(h, line_spacing=1.1, space_before_pt=5, space_after_pt=2)
             continue
         if stripped.startswith("### "):
             h = doc.add_heading(stripped[4:], level=3)
-            _apply_jp_font_to_paragraph(h, size_pt=12)
+            _apply_jp_font_to_paragraph(h, size_pt=11)
             _compact_paragraph(h, line_spacing=1.1, space_before_pt=4, space_after_pt=2)
             continue
         if stripped.startswith("#### "):
             h = doc.add_heading(stripped[5:], level=4)
-            _apply_jp_font_to_paragraph(h, size_pt=11)
+            _apply_jp_font_to_paragraph(h, size_pt=10)
             _compact_paragraph(h, line_spacing=1.1, space_before_pt=3, space_after_pt=1)
             continue
 
         # 5) 箇条書き
         if stripped.startswith("- ") or stripped.startswith("* "):
             p = doc.add_paragraph(stripped[2:], style="List Bullet")
-            _apply_jp_font_to_paragraph(p, size_pt=11)
+            _apply_jp_font_to_paragraph(p, size_pt=10)
             _compact_paragraph(p, line_spacing=1.15, space_after_pt=0)
             continue
 
@@ -246,13 +246,13 @@ def export_to_word(session: Session, company_code: int, proposal_text: str, phas
         if m:
             content = m.group(2)
             p = doc.add_paragraph(content, style="List Number")
-            _apply_jp_font_to_paragraph(p, size_pt=11)
+            _apply_jp_font_to_paragraph(p, size_pt=10)
             _compact_paragraph(p, line_spacing=1.15, space_after_pt=0)
             continue
 
         # 7) 通常段落
         p = doc.add_paragraph(stripped)
-        _apply_jp_font_to_paragraph(p, size_pt=11)
+        _apply_jp_font_to_paragraph(p, size_pt=10)
         _compact_paragraph(p, line_spacing=1.15, space_after_pt=2)
 
     # ループ終端で表が閉じていなければ flush
