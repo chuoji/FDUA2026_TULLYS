@@ -1099,6 +1099,43 @@ CREATE OR REPLACE SEMANTIC VIEW PREF_RES_SOCIAL_LIFE_PROPOSAL_SEMANTIC
 
   );
 
+-- ================================================================
+-- Semantic View8: 建設企業 有価証券報告書 取り組み情報（定性）
+-- 目的: 仮想建設企業の企業戦略書作成における参考資料
+-- ================================================================
+CREATE OR REPLACE SEMANTIC VIEW CONSTRUCTION_REFERENCE_INITIATIVES
+  TABLES (
+    ri AS FDUA_COMPETITION.PUBLIC.CONSTRUCTION_COMPANY_STRATEGY_REFERENCE
+      WITH SYNONYMS (
+        '参考企業取り組み', '建設企業の取り組み', '有価証券報告書',
+        '開示情報', '定性情報', '戦略', 'strategy reference'
+      )
+      COMMENT = '実在する建設企業の有価証券報告書から切り出した取り組み情報（企業戦略書作成の参考用）'
+  )
+  FACTS (
+    -- 取り組み内容（文章本体）
+    ri."取り組み内容" AS ri."取り組み内容"
+      WITH SYNONYMS (
+        '取り組み内容', '本文', '記載内容', 'テキスト', 'description', 'details', 'narrative'
+      )
+      COMMENT = '有価証券報告書から切り出した取り組み内容（定性テキスト）'
+  )
+  DIMENSIONS (
+    -- 参考企業名
+    PUBLIC ri."企業" AS ri."企業"
+      WITH SYNONYMS (
+        '企業', '会社', '社名', 'company', 'company name'
+      )
+      COMMENT = '参考情報の対象となる実在企業（社名）',
+
+    -- 有価証券報告書内の項目（章・セクション）
+    PUBLIC ri."項目" AS ri."項目"
+      WITH SYNONYMS (
+        '項目', '章', 'セクション', '開示項目',
+        'section', 'topic', 'category'
+      )
+      COMMENT = '有価証券報告書内の項目（例: 経営方針、サステナビリティ、事業等のリスク、MD&A、研究開発活動）'
+  );
 
 -- ================================================================
 -- 確認
