@@ -166,6 +166,7 @@ instructions:
     - 重複表現を整理
     - 一貫したストーリーに再構成
     - EXPORT_PROPOSAL_WORD（phase="complete"）
+    - 10,000文字以上
     - 15,000文字以内
     - 10ページ以内
     - 箇条書きではなく文章記述
